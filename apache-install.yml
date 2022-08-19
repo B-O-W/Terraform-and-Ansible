@@ -1,0 +1,43 @@
+- become: yes
+  hosts: all
+  name: apache-install
+  tasks:    
+    - name: Wait for apt to unlock
+      become: yes
+      shell:  while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 5; done;
+      
+    - name: Install apache2
+      apt:
+        name: apache2
+        update_cache: yes
+        state: latest
+
+      
+    - name: Enable mod_rewrite
+      apache2_module:
+        name: rewrite 
+        state: present
+
+    - name: Recursively copy web-server directory
+      copy:
+        src: files/dist/
+        dest: /var/www/html
+        directory_mode: 0755
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+    
+    - name: Recursively copy web-server directory
+      copy:
+        src: files/src
+        dest: /var/www/html/src
+        directory_mode: 0755
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+
+  handlers:
+    - name: Restart apache2
+      service:
+        name: apache2
+        state: restarted
